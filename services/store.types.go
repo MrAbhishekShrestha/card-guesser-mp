@@ -7,9 +7,9 @@ type HubStore interface {
 	GetPlayerById(id uuid.UUID) (*Player, error)
 	UnregisterPlayer(id uuid.UUID) error
 	SetPlayerName(id uuid.UUID, name string) error
-	CreateRoom(room any)
-	GetRoomById(id string)
-	DeleteRoom(id string)
-	JoinRoom(id string)
-	LeaveRoom(id string)
+	CreateRoom(room *Room)
+	GetRoomById(id uuid.UUID) (*Room, error)
+	DeleteRoom(id uuid.UUID) error
+	JoinRoom(id uuid.UUID, playerId uuid.UUID) error
+	LeaveRoom(id uuid.UUID, playerId uuid.UUID) error
 }

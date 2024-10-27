@@ -8,13 +8,13 @@ import (
 
 type Store struct {
 	players map[uuid.UUID]*Player
-	rooms   map[uuid.UUID]bool
+	rooms   map[uuid.UUID]*Room
 }
 
 func NewStore() *Store {
 	return &Store{
 		players: make(map[uuid.UUID]*Player),
-		rooms:   make(map[uuid.UUID]bool),
+		rooms:   make(map[uuid.UUID]*Room),
 	}
 }
 
@@ -49,8 +49,41 @@ func (s *Store) SetPlayerName(id uuid.UUID, name string) error {
 	return nil
 }
 
-func (s *Store) CreateRoom(room any)   {}
-func (s *Store) GetRoomById(id string) {}
-func (s *Store) DeleteRoom(id string)  {}
-func (s *Store) JoinRoom(id string)    {}
-func (s *Store) LeaveRoom(id string)   {}
+func (s *Store) CreateRoom(room *Room) {
+	s.rooms[room.id] = room
+}
+
+func (s *Store) GetRoomById(id uuid.UUID) (*Room, error) {
+	room, ok := s.rooms[id]
+	if !ok {
+		return nil, errors.New("Room not found")
+	}
+	return room, nil
+}
+
+func (s *Store) DeleteRoom(id uuid.UUID) error {
+	room, err := s.GetRoomById(id)
+	if err != nil {
+		return err
+	}
+	delete(s.rooms, room.id)
+	return nil
+}
+
+func (s *Store) JoinRoom(id uuid.UUID, playerId uuid.UUID) error {
+	room, err := s.GetRoomById(id)
+	if err != nil {
+		return err
+	}
+	room.players[playerId] = true
+	return nil
+}
+
+func (s *Store) LeaveRoom(id uuid.UUID, playerId uuid.UUID) error {
+	room, err := s.GetRoomById(id)
+	if err != nil {
+		return err
+	}
+	delete(s.rooms, room.id)
+	return nil
+}
