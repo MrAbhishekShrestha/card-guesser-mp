@@ -15,9 +15,11 @@ func getEnv(key, fallback string) string {
 }
 
 func main() {
+	// host := "localhost:"
+	host := "0.0.0.0:"
 	// port := "localhost:3000"
 	port := getEnv("PORT", "3000")
-	server := api.NewAPIServer(port)
+	server := api.NewAPIServer(host + port)
 	if err := server.Run(); err != nil {
 		log.Fatalf("APIServer error: %v", err)
 	}
