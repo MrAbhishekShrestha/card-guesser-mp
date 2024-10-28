@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -30,12 +31,24 @@ func (s *APIServer) Run() error {
 	go Hub.Run()
 
 	router := http.NewServeMux()
+	router.HandleFunc(pathPrefix+"hello", serveHelloWorld)
 	router.HandleFunc(pathPrefix+"ws", func(w http.ResponseWriter, r *http.Request) {
 		serveWs(Hub, w, r)
 	})
 
 	log.Println("Listening on", s.addr)
 	return http.ListenAndServe(s.addr, router)
+}
+
+func serveHelloWorld(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	response := struct {
+		Data string `json:"data"`
+	}{
+		Data: "Hello World",
+	}
+	json.NewEncoder(w).Encode(response)
 }
 
 func serveWs(hub *services.Hub, w http.ResponseWriter, r *http.Request) {
