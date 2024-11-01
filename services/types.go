@@ -103,3 +103,56 @@ func MapIntToRank(rankInt int) string {
 func (c *Card) String() string {
 	return c.Suit + MapIntToRank(c.Rank)
 }
+
+type ServerMessage[V any] struct {
+	Action  string `json:"action"`
+	Status  string `json:"status"`
+	Payload V      `json:"payload"`
+}
+
+type RegisterPlayerResponse struct {
+	PlayerId uuid.UUID `json:"playerId"`
+}
+
+type CreateRoomResponse struct {
+	RoomId uuid.UUID `json:"roomId"`
+}
+
+type GenericErrorResponse struct {
+	Error string `json:"error"`
+}
+
+type JoinRoomResponse struct {
+	RoomId    uuid.UUID `json:"roomId"`
+	NewPlayer string    `json:"newPlayer"`
+	Players   []string  `json:"players"`
+}
+
+type LeaveRoomResponse struct {
+	RoomId     uuid.UUID `json:"roomId"`
+	LeftPlayer string    `json:"leftPlayer"`
+	Players    []string  `json:"players"`
+}
+
+type StartGameResponse struct {
+	RoomId uuid.UUID `json:"roomId"`
+	GameId uuid.UUID `json:"gameId"`
+}
+
+func ServerSuccessMsg[V any](action string, payload V) ([]byte, error) {
+	message := ServerMessage[V]{
+		Action:  action,
+		Status:  "SUCCESS",
+		Payload: payload,
+	}
+	return json.Marshal(message)
+}
+
+func ServerFailMsg[V any](action string, payload V) ([]byte, error) {
+	message := ServerMessage[V]{
+		Action:  action,
+		Status:  "FAIL",
+		Payload: payload,
+	}
+	return json.Marshal(message)
+}

@@ -1,7 +1,6 @@
 package services
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand/v2"
@@ -90,28 +89,70 @@ func (r *Room) Run() {
 		case player := <-r.startGame:
 			if _, ok := r.players[player.id]; !ok {
 				log.Printf("Player %s is not in room %s", player.id, r.id)
-				player.send <- []byte(fmt.Sprintf("You are not in room %s", r.id))
+				errResp := GenericErrorResponse{
+					Error: fmt.Sprintf("you are not in room %s", r.id),
+				}
+				resp, err := ServerFailMsg(START_GAME, errResp)
+				if err != nil {
+					log.Printf("error marshalling: %v\n", err)
+					continue
+				}
+				player.send <- resp
 				continue
 			}
 			lastGame := r.gameStack.Peek()
 			if lastGame != nil && lastGame.isOngoing() {
 				log.Printf("Current game is still on-going")
-				player.send <- []byte("Current game is still on-going")
+				errResp := GenericErrorResponse{
+					Error: "Current game is still on-going",
+				}
+				resp, err := ServerFailMsg(START_GAME, errResp)
+				if err != nil {
+					log.Printf("error marshalling: %v\n", err)
+					continue
+				}
+				player.send <- resp
 				continue
 			}
-			r.gameStack.Push(NewGame())
+			game := NewGame()
+			r.gameStack.Push(game)
 			log.Printf("New Game started")
-			r.broadCastMessage([]byte("New Game started"))
+			resp := StartGameResponse{
+				RoomId: r.id,
+				GameId: game.id,
+			}
+			data, err := ServerSuccessMsg(START_GAME, resp)
+			if err != nil {
+				log.Printf("error marshalling: %v\n", err)
+				continue
+			}
+			r.broadCastMessage(data)
 		case payload := <-r.makeMove:
 			if _, ok := r.players[payload.Player.id]; !ok {
 				log.Printf("Player %s is not in room %s", payload.Player.id, r.id)
-				payload.Player.send <- []byte(fmt.Sprintf("You are not in room %s", r.id))
+				errResp := GenericErrorResponse{
+					Error: fmt.Sprintf("you are not in room %s", r.id),
+				}
+				resp, err := ServerFailMsg(MOVE, errResp)
+				if err != nil {
+					log.Printf("error marshalling: %v\n", err)
+					continue
+				}
+				payload.Player.send <- resp
 				continue
 			}
 			game := r.gameStack.Peek()
 			if game == nil || !game.isOngoing() {
 				log.Print("Game is over")
-				payload.Player.send <- []byte("Game is over")
+				errResp := GenericErrorResponse{
+					Error: fmt.Sprintf("you are not in room %s", r.id),
+				}
+				resp, err := ServerFailMsg(MOVE, errResp)
+				if err != nil {
+					log.Printf("error marshalling: %v\n", err)
+					continue
+				}
+				payload.Player.send <- resp
 				continue
 			}
 			game.choices[payload.Player.id] = payload.Move
@@ -139,7 +180,7 @@ func (r *Room) printResult() error {
 	res := make([]PlayerWithScore, 0)
 	game := r.gameStack.Peek()
 	if game == nil {
-		return fmt.Errorf("No last game")
+		return fmt.Errorf("no last game")
 	}
 	targetCard, err := MapIntToCard(game.target)
 	if err != nil {
@@ -154,7 +195,7 @@ func (r *Room) printResult() error {
 		if err != nil {
 			return err
 		}
-		playerScore, _ := game.scores[key]
+		playerScore := game.scores[key]
 		scoreSturct := PlayerWithScore{
 			Player: player.name,
 			Guess:  playerCard.String(),
@@ -168,10 +209,10 @@ func (r *Room) printResult() error {
 		Target:  targetCard.String(),
 		Results: res,
 	}
-	bytes, err := json.Marshal(payload)
+	resp, err := ServerSuccessMsg(END_GAME, payload)
 	if err != nil {
 		return err
 	}
-	r.broadCastMessage(bytes)
+	r.broadCastMessage(resp)
 	return nil
 }
