@@ -8,6 +8,10 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const (
+	REGISTER = "REGISTER"
+)
+
 type Hub struct {
 	Store      HubStore
 	Register   chan *websocket.Conn
@@ -43,7 +47,15 @@ func (h *Hub) Run() {
 			player := NewPlayer(id, conn, h)
 			h.Store.RegisterPlayer(player)
 			player.Run()
-			player.send <- []byte(id.String())
+			newPlayerPayload := RegisterPlayerResponse{
+				PlayerId: id,
+			}
+			data, err := ServerSuccessMsg(REGISTER, newPlayerPayload)
+			if err != nil {
+				log.Printf("error marshalling: %v\n", err)
+				continue
+			}
+			player.send <- data
 			log.Printf("new player %s registered\n", id)
 		case playerId := <-h.Unregister:
 			if err := h.Store.UnregisterPlayer(playerId); err != nil {
@@ -67,7 +79,15 @@ func (h *Hub) Run() {
 			go room.Run()
 			h.Store.CreateRoom(room)
 			log.Printf("new room %s created\n", room.id)
-			player.send <- []byte(fmt.Sprintf("New room %s created\n", room.id.String()))
+			newRoomPayload := CreateRoomResponse{
+				RoomId: room.id,
+			}
+			data, err := ServerSuccessMsg(CREATE_ROOM, newRoomPayload)
+			if err != nil {
+				log.Printf("error marshalling: %v\n", err)
+				continue
+			}
+			player.send <- data
 		case payload := <-h.JoinRoom:
 			player, err := h.Store.GetPlayerById(payload.PlayerId)
 			if err != nil {
@@ -77,12 +97,38 @@ func (h *Hub) Run() {
 			room, err := h.Store.GetRoomById(payload.RoomId)
 			if err != nil {
 				log.Printf("room %s not found\n", payload.RoomId)
-				player.send <- []byte(fmt.Sprintf("room %s not found\n", payload.RoomId))
+				createRoomErr := GenericErrorResponse{
+					Error: fmt.Sprintf("room %s not found\n", payload.RoomId),
+				}
+				data, err := ServerFailMsg(JOIN_ROOM, createRoomErr)
+				if err != nil {
+					log.Printf("error marshalling: %v\n", err)
+					continue
+				}
+				player.send <- data
 				continue
 			}
 			room.players[player.id] = true
 			log.Printf("Player %s Joined Room %s\n", player.name, room.id.String())
-			room.broadcast <- []byte(fmt.Sprintf("Player %s Joined Room %s\n", player.name, room.id.String()))
+			playerNames := make([]string, len(room.players))
+			for k := range room.players {
+				player, err := h.Store.GetPlayerById(payload.PlayerId)
+				if err != nil {
+					log.Printf("player %s not found\n", k)
+				}
+				playerNames = append(playerNames, player.name)
+			}
+			joinRoomResp := JoinRoomResponse{
+				RoomId:    payload.RoomId,
+				NewPlayer: player.name,
+				Players:   playerNames,
+			}
+			data, err := ServerSuccessMsg(JOIN_ROOM, joinRoomResp)
+			if err != nil {
+				log.Printf("error marshalling: %v\n", err)
+				continue
+			}
+			room.broadcast <- []byte(data)
 		case payload := <-h.LeaveRoom:
 			player, err := h.Store.GetPlayerById(payload.PlayerId)
 			if err != nil {
@@ -92,11 +138,40 @@ func (h *Hub) Run() {
 			room, err := h.Store.GetRoomById(payload.RoomId)
 			if err != nil {
 				log.Printf("room %s not found\n", payload.RoomId)
-				player.send <- []byte(fmt.Sprintf("room %s not found\n", payload.RoomId))
+				createRoomErr := GenericErrorResponse{
+					Error: fmt.Sprintf("room %s not found\n", payload.RoomId),
+				}
+				data, err := ServerFailMsg(JOIN_ROOM, createRoomErr)
+				if err != nil {
+					log.Printf("error marshalling: %v\n", err)
+					continue
+				}
+				player.send <- data
 				continue
 			}
 			log.Printf("Player %s left Room %s\n", player.name, room.id.String())
-			room.broadcast <- []byte(fmt.Sprintf("Player %s left Room %s\n", player.name, room.id.String()))
+			playerNames := make([]string, len(room.players))
+			for k := range room.players {
+				if k == payload.PlayerId {
+					continue
+				}
+				player, err := h.Store.GetPlayerById(payload.PlayerId)
+				if err != nil {
+					log.Printf("player %s not found\n", k)
+				}
+				playerNames = append(playerNames, player.name)
+			}
+			leaveRoomResp := LeaveRoomResponse{
+				RoomId:     payload.RoomId,
+				LeftPlayer: player.name,
+				Players:    playerNames,
+			}
+			data, err := ServerSuccessMsg(JOIN_ROOM, leaveRoomResp)
+			if err != nil {
+				log.Printf("error marshalling: %v\n", err)
+				continue
+			}
+			room.broadcast <- []byte(data)
 			delete(room.players, player.id)
 		case payload := <-h.StartGame:
 			player, err := h.Store.GetPlayerById(payload.PlayerId)
@@ -107,7 +182,15 @@ func (h *Hub) Run() {
 			room, err := h.Store.GetRoomById(payload.RoomId)
 			if err != nil {
 				log.Printf("room %s not found\n", payload.RoomId)
-				player.send <- []byte(fmt.Sprintf("room %s not found\n", payload.RoomId))
+				createRoomErr := GenericErrorResponse{
+					Error: fmt.Sprintf("room %s not found\n", payload.RoomId),
+				}
+				data, err := ServerFailMsg(JOIN_ROOM, createRoomErr)
+				if err != nil {
+					log.Printf("error marshalling: %v\n", err)
+					continue
+				}
+				player.send <- data
 				continue
 			}
 			room.startGame <- player
@@ -121,7 +204,15 @@ func (h *Hub) Run() {
 			room, err := h.Store.GetRoomById(payload.RoomId)
 			if err != nil {
 				log.Printf("room %s not found\n", payload.RoomId)
-				player.send <- []byte(fmt.Sprintf("room %s not found\n", payload.RoomId))
+				createRoomErr := GenericErrorResponse{
+					Error: fmt.Sprintf("room %s not found\n", payload.RoomId),
+				}
+				data, err := ServerFailMsg(MOVE, createRoomErr)
+				if err != nil {
+					log.Printf("error marshalling: %v\n", err)
+					continue
+				}
+				player.send <- data
 				continue
 			}
 			newPL := PlayerWithMove{Player: player, Move: payload.Move}

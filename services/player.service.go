@@ -70,12 +70,28 @@ func (p *Player) readPump() {
 		var msg ClientMessage
 		if err = json.Unmarshal(message, &msg); err != nil {
 			log.Println("Error unmarshalling message: ", err)
-			p.send <- []byte("Invalid Message")
+			errResp := GenericErrorResponse{
+				Error: err.Error(),
+			}
+			resp1, err := ServerFailMsg("", errResp)
+			if err != nil {
+				log.Printf("error marshalling response: %v\n", err)
+				continue
+			}
+			p.send <- resp1
 			continue
 		}
 		if err = ActionHandler(p, msg.Action, msg.Payload); err != nil {
 			log.Print(err)
-			p.send <- []byte(err.Error())
+			errResp := GenericErrorResponse{
+				Error: err.Error(),
+			}
+			resp, err := ServerFailMsg(msg.Action, errResp)
+			if err != nil {
+				log.Printf("error marshalling response: %v\n", err)
+				continue
+			}
+			p.send <- resp
 			continue
 		}
 	}
