@@ -2,8 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/MrAbhishekShrestha/card-guesser-mp/services"
 	"github.com/gorilla/websocket"
@@ -36,11 +39,25 @@ func (s *APIServer) Run() error {
 		serveWs(Hub, w, r)
 	})
 
+	wd, _ := os.Getwd()
+	angularDist := filepath.Join(wd, "client", "dist", "card-guesser", "browser")
+	if _, err := os.Stat(angularDist); os.IsNotExist(err) {
+		return fmt.Errorf("could not find the dist folder: %v", err)
+	}
+	indexPath := filepath.Join(angularDist, "index.html")
+	if _, err := os.Stat(indexPath); os.IsNotExist(err) {
+		return fmt.Errorf("could not find index.html: %v", err)
+	}
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		serveClient(angularDist, indexPath, w, r)
+	})
+
 	log.Println("Listening on", s.addr)
 	return http.ListenAndServe(s.addr, router)
 }
 
 func serveHelloWorld(w http.ResponseWriter, r *http.Request) {
+	log.Println("serving Hello World")
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	response := struct {
@@ -58,4 +75,22 @@ func serveWs(hub *services.Hub, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	hub.Register <- conn
+}
+
+func serveClient(angularDist string, indexPath string, w http.ResponseWriter, r *http.Request) {
+	log.Println("serving static client")
+	fs := http.FileServer(http.Dir(angularDist))
+	path := filepath.Join(angularDist, r.URL.Path)
+	_, err := os.Stat(path)
+
+	if os.IsNotExist(err) {
+		log.Printf("Path %s not found. serving index.html\n", r.URL.Path)
+		http.ServeFile(w, r, indexPath)
+		return
+	} else if err != nil {
+		log.Printf("Error checking path %s: %v\n", path, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fs.ServeHTTP(w, r)
 }
