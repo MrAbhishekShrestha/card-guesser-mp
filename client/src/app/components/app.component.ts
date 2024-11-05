@@ -18,7 +18,6 @@ import { SubSinkLocal } from '../services/subsink';
 })
 export class AppComponent implements OnInit, OnDestroy {
   wsService = inject(WebSocketService);
-  subs = new SubSinkLocal();
 
   ngOnInit(): void {
     const url = `${AppConstants.protocol}://${AppConstants.domain}${AppConstants.path}`
@@ -29,6 +28,5 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.wsService.connected) {
       this.wsService.disconnect();
     }
-    this.subs.unsubscribe();
   }
 }
