@@ -2,8 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CardSvgComponent } from './cards-svg.component';
 import { Router } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { WebSocketService } from '../services/ws.service';
-import { WebSocketClientMessage } from '../models/websocket.model';
+import { GameService } from '../services/game.service';
 
 @Component({
   selector: 'app-home',
@@ -37,16 +36,10 @@ export class HomeComponent {
   });
 
   private router = inject(Router);
-  private wsService = inject(WebSocketService);
+  private gameService = inject(GameService);
 
   play() {
-    const wsMessage: WebSocketClientMessage = {
-      action: "SET_NAME",
-      payload: {
-        name: this.form.value?.name
-      }
-    };
-    this.wsService.sendMessage(wsMessage);
+    this.gameService.setPlayerName(this.form.value?.name ?? "");
     this.router.navigate(['/rooms']);
   }
 }

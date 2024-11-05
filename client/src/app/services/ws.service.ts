@@ -1,11 +1,12 @@
 import { Injectable } from "@angular/core";
 import { webSocket, WebSocketSubject } from "rxjs/webSocket";
-import { WebSocketClientMessage } from "../models/websocket.model";
+import { ClientMessage, ServerMessage, ServerPayloads } from "../models/websocket.model";
+import { Observable } from "rxjs";
 
 @Injectable({ providedIn: 'root' })
 export class WebSocketService {
   private socket$!: WebSocketSubject<any>;
-  messages$ = this.socket$?.asObservable();
+  messages$: Observable<ServerMessage<ServerPayloads>> = this.socket$?.asObservable();
   connected = false;
 
   connect(url: string) {
@@ -16,9 +17,9 @@ export class WebSocketService {
     }
   }
 
-  sendMessage(message: WebSocketClientMessage) {
+  sendMessage<K>(message: ClientMessage<K>) {
     if (this.socket$) {
-      this.socket$.next(JSON.stringify(message));
+      this.socket$.next(message);
     }
   }
 
