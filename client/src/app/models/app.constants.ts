@@ -7,7 +7,7 @@ export class AppConstants {
   // public static readonly path = "/api/v1/ws"
 }
 
-export enum Actions {
+export enum GameActions {
   REGISTER = "REGISTER",
   SET_NAME = "SET_NAME",
   CREATE_GAME = "CREATE_GAME"

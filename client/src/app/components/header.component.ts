@@ -21,6 +21,4 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   `,
   styles: []
 })
-export class HeaderComponent {
-  title = 'card-guesser';
-}
+export class HeaderComponent { }
