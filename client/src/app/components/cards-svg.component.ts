@@ -1,8 +1,9 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
   selector: 'cards-svg',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
   <svg
     [attr.width]="getPixelated(svgWidth())"
