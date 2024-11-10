@@ -26,6 +26,7 @@ export class WebSocketEffects {
           tap((message: ServerMessage<any>) => this.store.dispatch(this.resolveReceivedMessage(message))),
           catchError(error => {
             console.error('websocket error: ', error);
+            this.store.dispatch(disconnectWebSocket());
             return of(disconnectWebSocket());
           })
         ).subscribe();

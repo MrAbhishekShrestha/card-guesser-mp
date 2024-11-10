@@ -27,7 +27,7 @@ import { ResultsComponent } from "./results.component";
     }
     @case ('OVER') {
       <h3 class="mt-2">Game Over</h3>
-      <div class="d-flex flex-wrap justify-content-between mt-2">
+      <div class="d-flex flex-wrap justify-content-between gap-5">
         <div>
           <p>Your Guess:</p>
           <app-card [card]="currentGuess"/>

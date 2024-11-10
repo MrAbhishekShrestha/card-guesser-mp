@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { sendCreateRoom, sendJoinRoom } from '../controllers/ws-store/ws.actions';
 import { ClientMessage, CreateRoomPayloadClient, GeneralRoomPayloadClient } from '../models/websocket.model';
 import { GameActions } from '../models/app.constants';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { SubSinkLocal } from '../services/subsink';
 import { selectWSGameState } from '../controllers/ws-store/ws.selectors';
 import { tap } from 'rxjs/operators';
