@@ -3,13 +3,12 @@ import { Store } from "@ngrx/store";
 import { selectCurrentGame, selectJoinedRoom } from "../controllers/ws-store/ws.selectors";
 import { AsyncPipe, NgFor, NgIf } from "@angular/common";
 import { sendMove, sendStartGame } from "../controllers/ws-store/ws.actions";
-import { ClientMessage, GeneralRoomPayloadClient, MakeMovePayload, PlayerResult } from "../models/websocket.model";
+import { ClientMessage, GeneralRoomPayloadClient, MakeMovePayload } from "../models/websocket.model";
 import { GameActions } from "../models/app.constants";
 import { Card } from "../models/card.model";
-import { cardBEStrToCardMapper, convertBERankToCard, copyToClipboard, generateCards } from "../services/utils";
+import { cardBEStrToCardMapper, copyToClipboard, generateCards } from "../services/utils";
 import { GameComponent } from "./game.component";
-import { map, startWith } from "rxjs";
-import { RouterTestingHarness } from "@angular/router/testing";
+import { map } from "rxjs";
 
 @Component({
   selector: 'app-room',
@@ -20,7 +19,7 @@ import { RouterTestingHarness } from "@angular/router/testing";
   <div class="container" *ngIf="room$ | async as room">
     <div class="d-flex flex-wrap justify-content-between">
       <h3>Room Details</h3>
-      <button class="btn btn-success" (click)="startGame(room.id)">Start Game</button>
+      <button class="btn btn-success" (click)="startGame(room.id)" [disabled]="disableStart(room.status)">Start Game</button>
     </div>
     <p>Room ID: {{ room.id }} <i class="bi bi-clipboard p-cursor p-2" (click)="copy(room.id)"></i>
       <br /> Players:
@@ -75,5 +74,9 @@ export class RoomComponent {
 
   copy(roomId: string): void {
     copyToClipboard(roomId);
+  }
+
+  disableStart(status: string): boolean {
+    return status === "START" || status === "WAIT";
   }
 }

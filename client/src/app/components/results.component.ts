@@ -21,7 +21,7 @@ import { cardBEStrToCardMapper, convertIntRankToStr } from "../services/utils";
     </thead>
     <tbody>
       <tr *ngFor="let res of results(); let i = index">
-        <th scope="row">{{ i }}</th>
+        <th scope="row">{{ i+1 }}</th>
         <td>{{ res.player }}</td>
         <td>{{ guessMapper(res.guess) }}</td>
         <td>{{ res.score }}</td>
