@@ -46,7 +46,7 @@ type PlayerWithScore struct {
 
 type ResultResponse struct {
 	RoomId  uuid.UUID         `json:"roomId"`
-	GameId  int               `json:"gameId"`
+	GameId  uuid.UUID         `json:"gameId"`
 	Target  string            `json:"target"`
 	Results []PlayerWithScore `json:"results"`
 }
@@ -123,9 +123,10 @@ type GenericErrorResponse struct {
 }
 
 type JoinRoomResponse struct {
-	RoomId    uuid.UUID `json:"roomId"`
-	NewPlayer string    `json:"newPlayer"`
-	Players   []string  `json:"players"`
+	RoomId           uuid.UUID `json:"roomId"`
+	TimeoutInSeconds int       `json:"timeoutInSeconds"`
+	NewPlayer        string    `json:"newPlayer"`
+	Players          []string  `json:"players"`
 }
 
 type LeaveRoomResponse struct {

@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -110,18 +111,20 @@ func (h *Hub) Run() {
 			}
 			room.players[player.id] = true
 			log.Printf("Player %s Joined Room %s\n", player.name, room.id.String())
-			playerNames := make([]string, len(room.players))
+			playerNames := make([]string, 0)
 			for k := range room.players {
-				player, err := h.Store.GetPlayerById(payload.PlayerId)
+				curPlayer, err := h.Store.GetPlayerById(k)
 				if err != nil {
 					log.Printf("player %s not found\n", k)
+					continue
 				}
-				playerNames = append(playerNames, player.name)
+				playerNames = append(playerNames, curPlayer.name)
 			}
 			joinRoomResp := JoinRoomResponse{
-				RoomId:    payload.RoomId,
-				NewPlayer: player.name,
-				Players:   playerNames,
+				RoomId:           payload.RoomId,
+				TimeoutInSeconds: int(room.timeout / time.Second),
+				NewPlayer:        player.name,
+				Players:          playerNames,
 			}
 			data, err := ServerSuccessMsg(JOIN_ROOM, joinRoomResp)
 			if err != nil {

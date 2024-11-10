@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand/v2"
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -203,9 +204,12 @@ func (r *Room) printResult() error {
 		}
 		res = append(res, scoreSturct)
 	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Score <= res[j].Score
+	})
 	payload := ResultResponse{
 		RoomId:  r.id,
-		GameId:  r.gameStack.tos - 1,
+		GameId:  game.id,
 		Target:  targetCard.String(),
 		Results: res,
 	}

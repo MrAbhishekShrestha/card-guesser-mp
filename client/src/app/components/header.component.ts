@@ -1,11 +1,12 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CardSvgComponent } from './cards-svg.component';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CardSvgComponent, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CardSvgComponent, RouterLink, RouterLinkActive],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
   <div class="container">
     <header class="d-flex justify-content-between py-3  mb-4 border-bottom">
